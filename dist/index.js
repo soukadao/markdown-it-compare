@@ -9,12 +9,19 @@ function titleTokens(Token, label, level) {
     open.attrSet("class", "remark-compare-title");
     const inline = createToken(Token, "inline", "", 0);
     inline.level = level + 1;
-    inline.content = label;
+    inline.content = "";
     inline.children = [createToken(Token, "text", "", 0)];
     inline.children[0].content = label;
     const close = createToken(Token, "paragraph_close", "p", -1);
     close.level = level;
     return [open, inline, close];
+}
+function parseBlockLines(md, state, startLine, endLine) {
+    const source = state.getLines(startLine, endLine, state.blkIndent, false);
+    if (source.trim().length === 0) {
+        return;
+    }
+    md.block.parse(source, md, state.env, state.tokens);
 }
 function markdownItCompare(md, _options = {}) {
     md.block.ruler.before("fence", "markdown_it_compare", (state, startLine, endLine, silent) => {
@@ -58,7 +65,7 @@ function markdownItCompare(md, _options = {}) {
             itemOpen.attrSet("class", `remark-compare-item remark-compare-item-${item.key}`);
             itemOpen.attrSet("data-compare-key", item.key);
             state.tokens.push(...titleTokens(Token, item.label, state.level + 1));
-            state.md.block.tokenize(state, item.start, item.end);
+            parseBlockLines(state.md, state, item.start, item.end);
             const itemClose = state.push("markdown_it_compare_item_close", "section", -1);
             itemClose.block = true;
         }
